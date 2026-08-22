@@ -27,17 +27,22 @@ function test_get_real_pr() {
 
 function get_sheet_dates(sheet_name) {
   // Get all the dates from a sheet
-  var sheet = get_sheet(sheet_name);  // TODO would it be faster to pass the sheet
+  var sheet = get_sheet(sheet_name);
+  return get_sheet_dates_from_sheet(sheet);
+}
+
+function get_sheet_dates_from_sheet(sheet) {
   var startRow = 1;  // This is 1 indexed
   var startCol = 2; // The first one is just the name
   var numRows = 1; // Just get the date row
-  var numCols = sheet.getMaxColumns() - startCol + 1;
-  // Fetch the range of cells an see what has been paid...
+  var numCols = sheet.getLastColumn() - startCol + 1;
+  if (numCols < 1) {
+    return [];
+  }
   var dataRange = sheet.getRange(startRow, startCol, numRows, numCols);
-  // Fetch values for each row in the Range.
   var data = dataRange.getValues();
 
-  return data[0];  // it returns [[]] and we only care about 0... there is no 1,2 so on
+  return data[0];
 }
 
 
@@ -199,10 +204,11 @@ function get_rows(sheet, lift_dict) {
   var startRow = lift_dict["startRow"];
   var startCol = 2; // The first one is just the name
   var numRows = lift_dict["endRow"] - startRow + 1;
-  var numCols = sheet.getMaxColumns() - startCol + 1;
-  // Fetch the range of cells an see what has been paid...
+  var numCols = sheet.getLastColumn() - startCol + 1;
+  if (numCols < 1) {
+    return [];
+  }
   var dataRange = sheet.getRange(startRow, startCol, numRows, numCols);
-  // Fetch values for each row in the Range.
   var data = dataRange.getValues();
 
   return data;
@@ -249,17 +255,15 @@ function get_lifts_with_regex_from_array(array) {
 }
 
 
-function get_lifts_with_regex(rows, sheet) {
+function get_lifts_with_regex(rows, dates) {
   const regex = /\d+-\d+/gm;
   let m;
   var lifts = []
 
   for (var row in rows) {
-    Logger.log("Row: " + row);
     for (var col in rows[row]) {
       var str = rows[row][col];
       while ((m = regex.exec(str)) !== null) {
-        Logger.log(str)
         // This is necessary to avoid infinite loops with zero-width matches
         if (m.index === regex.lastIndex) {
           regex.lastIndex++;
@@ -272,7 +276,7 @@ function get_lifts_with_regex(rows, sheet) {
             "weight": lift[0],
             "reps": lift[1],
             "1rm": calculate_max(lift[0], lift[1]),
-            "date": get_date(sheet, col),
+            "date": dates[col],
           })
         });
       }
@@ -325,15 +329,19 @@ function get_prs() {
   var max_lifts = [];
   var real_max_lifts = [];
   var lift_locations = get_lift_locations();
+  var sheets = {};
+  var dates_by_sheet = {};
   Logger.log(lift_locations);
   for (var key in lift_locations) {
     Logger.log("Lift is " + key);
-    var sheet = get_sheet(lift_locations[key]["sheet"]);
-    var data = get_rows(sheet, lift_locations[key]);
-    if (key == "deadlift") {
-      Logger.log('dead');
+    var sheet_name = lift_locations[key]["sheet"];
+    if (!sheets[sheet_name]) {
+      sheets[sheet_name] = get_sheet(sheet_name);
+      dates_by_sheet[sheet_name] = get_sheet_dates_from_sheet(sheets[sheet_name]);
     }
-    var lifts = get_lifts_with_regex(data, sheet);
+    var sheet = sheets[sheet_name];
+    var data = get_rows(sheet, lift_locations[key]);
+    var lifts = get_lifts_with_regex(data, dates_by_sheet[sheet_name]);
     var tmp_max_lifts = get_max_lift(lifts);
     var max_lift = tmp_max_lifts[0];
     var real_max_lift = tmp_max_lifts[1];
@@ -349,23 +357,17 @@ function get_prs() {
   return [max_lifts, real_max_lifts];
 }
 
-function write_cell(sheet, row, col, cell_str) {
-  write_range = sheet.getRange(row, col, 1, 1);
-  write_range.setValue(cell_str);
-}
-
-function write_prs_helper(max_lifts, row, col, sheet) {
-// TODO order them correctly
-  for (lift in max_lifts) {
-    var lift_name = max_lifts[lift]["lift"];
+function write_prs_helper(max_lifts) {
+  return max_lifts.map(function(max_lift) {
+    var lift_name = max_lift["lift"];
     lift_name = lift_name.charAt(0).toUpperCase() + lift_name.slice(1)
-    //Logger.log("writint prs:" + lift_name + " " + max_lifts[lift]["weight"] + "-" + max_lifts[lift]["reps"] + " " + max_lifts[lift]["date"] + max_lifts[lift]["1rm"]);
-    write_cell(sheet, row, col, lift_name);
-    write_cell(sheet, row, col + 1, max_lifts[lift]["weight"] + "-" + max_lifts[lift]["reps"]);
-    write_cell(sheet, row, col + 2, max_lifts[lift]["date"]);
-    write_cell(sheet, row, col + 3, max_lifts[lift]["1rm"]);
-    row++;
-  }
+    return [
+      lift_name,
+      max_lift["weight"] + "-" + max_lift["reps"],
+      max_lift["date"],
+      max_lift["1rm"],
+    ];
+  });
 }
 
 function write_prs() {
@@ -373,11 +375,21 @@ function write_prs() {
   var max_lifts_arr = get_prs();
   var max_lifts = max_lifts_arr[0];
   var real_max_lifts = max_lifts_arr[1];
-  row = 4;
-  col = 5;
-  write_prs_helper(max_lifts, row, col, sheet)
-  col = 9;
-  write_prs_helper(real_max_lifts, row, col, sheet)
+  var calculated_rows = write_prs_helper(max_lifts);
+  var real_rows = write_prs_helper(real_max_lifts);
+  var row_count = Math.max(calculated_rows.length, real_rows.length);
+  if (row_count === 0) {
+    return;
+  }
+
+  var output = [];
+  for (var i = 0; i < row_count; i++) {
+    output.push(
+      (calculated_rows[i] || ["", "", "", ""])
+        .concat(real_rows[i] || ["", "", "", ""])
+    );
+  }
+  sheet.getRange(4, 5, row_count, 8).setValues(output);
 
 }
 

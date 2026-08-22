@@ -47,6 +47,49 @@ describe('lift parsing and volume', () => {
   it('returns zero for an empty workout', () => {
     expect(app.calculate_volume([])).toBe(0);
   });
+
+  it('uses preloaded header dates while parsing spreadsheet rows', () => {
+    const lifts = app.get_lifts_with_regex(
+      [
+        ['225-5', ''],
+        ['', '185-10'],
+      ],
+      ['01/01/2026', '01/02/2026'],
+    );
+
+    expect(JSON.parse(JSON.stringify(lifts))).toEqual([
+      { weight: '225', reps: '5', '1rm': 254.24999999999997, date: '01/01/2026' },
+      { weight: '185', reps: '10', '1rm': 246.05, date: '01/02/2026' },
+    ]);
+  });
+});
+
+describe('write_prs', () => {
+  it('writes calculated and real PRs in one batch', () => {
+    const writes = [];
+    app.get_sheet = () => ({
+      getRange: (...range) => ({
+        setValues: (values) => writes.push({ range, values }),
+      }),
+    });
+    app.get_prs = () => [[
+      { lift: 'bench', weight: '225', reps: '5', date: '01/01/2026', '1rm': 254.25 },
+      { lift: 'squat', weight: '315', reps: '3', date: '01/02/2026', '1rm': 333.9 },
+    ], [
+      { lift: 'bench', weight: '245', reps: '1', date: '01/03/2026', '1rm': '245' },
+      { lift: 'squat', weight: '335', reps: '1', date: '01/04/2026', '1rm': '335' },
+    ]];
+
+    app.write_prs();
+
+    expect(writes).toEqual([{
+      range: [4, 5, 2, 8],
+      values: [
+        ['Bench', '225-5', '01/01/2026', 254.25, 'Bench', '245-1', '01/03/2026', '245'],
+        ['Squat', '315-3', '01/02/2026', 333.9, 'Squat', '335-1', '01/04/2026', '335'],
+      ],
+    }]);
+  });
 });
 
 describe('roundToNearest5', () => {
