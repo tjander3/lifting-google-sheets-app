@@ -1,0 +1,19 @@
+node_modules/
+
+# clasp OAuth credentials contain secrets. The project mapping is safe to commit.
+.clasprc.json
+.clasp-login*.out
+.clasp-login*.err
+
+# Other credentials and local configuration.
+.env
+.env.*
+!.env.example
+client_secret*.json
+credentials*.json
+
+# Test and editor output.
+coverage/
+.idea/
+.vscode/
+*.log

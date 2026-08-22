@@ -1,0 +1,18 @@
+{
+  "name": "lifting-google-sheets-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Google Apps Script helpers and macros for the lifting spreadsheet.",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "apps:status": "clasp show-file-status",
+    "apps:pull": "clasp pull",
+    "apps:push": "npm test && clasp push",
+    "apps:open": "clasp open-script"
+  },
+  "devDependencies": {
+    "@google/clasp": "^3.4.0",
+    "vitest": "^4.1.11"
+  }
+}
