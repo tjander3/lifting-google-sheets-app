@@ -46,7 +46,8 @@ The OAuth token is stored outside this repository by default. Never commit a
    npm run apps:push
    ```
 
-5. Commit the verified change and push it to GitHub.
+5. Commit the verified change and push it to GitHub. A successful test run on
+   `main` automatically pushes the same source to Apps Script.
 
 `npm run apps:push` stops if the local tests fail. A `clasp push` replaces the
 remote project's complete source, so avoid making simultaneous edits in the
@@ -61,8 +62,14 @@ the `FIVE_THREE_ONE_SSL` custom function. Spreadsheet integration and the
 recorded `Startnewweek` macro still require a test spreadsheet because they
 depend directly on `SpreadsheetApp` and workbook layout.
 
-GitHub Actions runs the same test suite for every push and pull request. It does
-not receive Google credentials and does not deploy to Apps Script.
+GitHub Actions runs the same test suite for every push and pull request. After a
+push to `main` passes, a separate deploy job restores the encrypted
+`CLASPRC_JSON_BASE64` repository secret and runs `clasp push`. Pull requests and
+non-`main` branches never receive the credential and never deploy.
+
+The deploy credential is a base64-encoded copy of the local `~/.clasprc.json`.
+It contains an OAuth refresh token and must only be stored as an encrypted
+GitHub Actions secret. Never print it, commit it, or place it in an artifact.
 
 ## Useful commands
 
