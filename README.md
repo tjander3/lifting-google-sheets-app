@@ -58,7 +58,8 @@ work and run `npm run apps:pull` before continuing locally.
 
 Vitest loads `src/Code.js` in a small Apps Script-like VM context. The current
 suite covers lift parsing, volume and one-rep-max calculations, rounding, and
-the `FIVE_THREE_ONE_SSL` custom function. Spreadsheet integration and the
+the `FIVE_THREE_ONE_SSL` custom function, including its three-set 40/50/60
+deload. Spreadsheet integration and the
 recorded `Startnewweek` macro still require a test spreadsheet because they
 depend directly on `SpreadsheetApp` and workbook layout.
 

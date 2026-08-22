@@ -61,6 +61,18 @@ describe('roundToNearest5', () => {
 });
 
 describe('FIVE_THREE_ONE_SSL', () => {
+  it('builds a three-set deload with no supplemental work', () => {
+    const result = app.FIVE_THREE_ONE_SSL(200, 60);
+
+    expect(JSON.parse(JSON.stringify(result))).toEqual([
+      ['08/22/2026'],
+      ['200 (40,50,60)'],
+      ['80-'],
+      ['100-'],
+      ['120-'],
+    ]);
+  });
+
   it('builds the standard five-row supplemental layout', () => {
     const result = app.FIVE_THREE_ONE_SSL(200, 85);
 
@@ -91,7 +103,7 @@ describe('FIVE_THREE_ONE_SSL', () => {
 
   it('rejects unsupported percentages', () => {
     expect(() => app.FIVE_THREE_ONE_SSL(200, 100)).toThrow(
-      'Allowed values: 85, 90, 95, 105',
+      'Allowed values: 60, 85, 90, 95, 105',
     );
   });
 

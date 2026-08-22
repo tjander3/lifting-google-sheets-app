@@ -450,13 +450,13 @@ Date.prototype.getWeek = function (dowOffset) {
 /**
  * FIVE_THREE_ONE_SSL(training_max, last_percentage)
  *
- * Returns a single row with (each will be in one collumn in their own row):
- *   [ date, header, set1, set2, set3, set4, set5, set6, set7, set8 ]
+ * Returns a single column containing the date, header, and grouped work sets.
  *
  * - training_max: your 5/3/1 Training Max (number)
- * - last_percentage: one of 85, 90, 95, or 105 (int)
+ * - last_percentage: one of 60 (deload), 85, 90, 95, or 105 (int)
  *
  * Rules:
+ * - For 60 (deload): the 3-set sequence is [40, 50, 60]
  * - For 85/90/95: the 8-set sequence is [p-20, p-10, p, p-10, p-10, p-10, p-10, p-10]
  * - For 105: the 8-set sequence is [75, 85, 95, 100, 105, 85, 85, 85]
  *
@@ -465,7 +465,7 @@ Date.prototype.getWeek = function (dowOffset) {
  * @customfunction
  */
 function FIVE_THREE_ONE_SSL(training_max, last_percentage) {
-  const allowed = new Set([85, 90, 95, 105]);
+  const allowed = new Set([60, 85, 90, 95, 105]);
   const p = Number(last_percentage);
   const tm = Number(training_max);
 
@@ -478,14 +478,18 @@ function FIVE_THREE_ONE_SSL(training_max, last_percentage) {
   }
 
   // Header (display) sequence
-  const headerSeq = (p === 105)
-    ? [75, 85, 95, 100, 105]
-    : [p - 20, p - 10, p];
+  const headerSeq = (p === 60)
+    ? [40, 50, 60]
+    : (p === 105)
+      ? [75, 85, 95, 100, 105]
+      : [p - 20, p - 10, p];
 
-  // Working 8-set sequence
-  const workSeq = (p === 105)
-    ? [75, 85, 95, 100, 105, 85, 85, 85]
-    : [p - 20, p - 10, p, p - 10, p - 10, p - 10, p - 10, p - 10];
+  // Work-set sequence
+  const workSeq = (p === 60)
+    ? [40, 50, 60]
+    : (p === 105)
+      ? [75, 85, 95, 100, 105, 85, 85, 85]
+      : [p - 20, p - 10, p, p - 10, p - 10, p - 10, p - 10, p - 10];
 
   // Compute rounded weights
   const w = workSeq.map(pc => roundToNearest5(tm * (pc / 100)));
@@ -501,7 +505,10 @@ function FIVE_THREE_ONE_SSL(training_max, last_percentage) {
 
   // Build single-column output per your grouping
   let rows;
-  if (p === 105) {
+  if (p === 60) {
+    // Deload: three main-work sets only, with no supplemental work.
+    rows = w.map(dash);
+  } else if (p === 105) {
     // [s1], [s2], [s3+s4], [s5], [s6+s7+s8]
     rows = [
       joinDashes([w[0], w[1]]),
