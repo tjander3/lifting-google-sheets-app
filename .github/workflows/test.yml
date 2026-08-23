@@ -74,7 +74,10 @@ jobs:
         run: npm run apps:status
 
       - name: Push to Apps Script
-        run: npx clasp push
+        # Apps Script metadata changes (for example, Script Properties edited in
+        # the browser) can make clasp treat the remote project as newer and skip
+        # a normal push. CI is the source of truth, so always publish this commit.
+        run: npx clasp push --force
 
       - name: Redeploy public stats endpoint
         env:
