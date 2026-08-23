@@ -48,12 +48,10 @@ describe('lift parsing and volume', () => {
     ])).toBe(2975);
   });
 
-  it('tolerates a colon typo for a three-digit barbell weight', () => {
+  it('rejects colon separator typos and ordinary times', () => {
     const lifts = app.get_lifts_with_regex_from_array(['415:1', 'at 8:30']);
 
-    expect(JSON.parse(JSON.stringify(lifts))).toEqual([
-      { weight: '415', reps: '1', '1rm': 415 },
-    ]);
+    expect(lifts).toEqual([]);
   });
 
   it('parses dumbbell pairs and counts both dumbbells in volume', () => {

@@ -229,13 +229,12 @@ function get_date(sheet, col) {
 
 
 function parse_lifts_from_value(value, date) {
-  // Canonical input is weight-reps. Also tolerate two historical formats:
-  // 415:1 (a likely separator typo) and 65s-10 (two 65 lb dumbbells).
-  // A colon is accepted only for a 3-4 digit weight so ordinary times such as
-  // 8:30 are not mistaken for lifts. Fractional reps are intentionally ignored.
+  // Canonical input is weight-reps. Also support 65s-10 for a pair of
+  // dumbbells and bw-5 for bodyweight reps. Separator typos, ordinary times,
+  // and fractional reps are intentionally ignored.
   // Reps must begin immediately after the separator. This prevents planned
   // sequences such as "320- 320- 320-" from becoming a false 320-rep set.
-  var regex = /(?:^|[^\w.])(?:(bw)\s*-(0|[1-9]\d*)|((?:0|[1-9]\d*)(?:\.\d+)?)(s)?\s*-(0|[1-9]\d*)|(\d{3,4})\s*:(0|[1-9]\d*))(?![\d.])/gi;
+  var regex = /(?:^|[^\w.])(?:(bw)\s*-(0|[1-9]\d*)|((?:0|[1-9]\d*)(?:\.\d+)?)(s)?\s*-(0|[1-9]\d*))(?![\d.])/gi;
   var match;
   var lifts = [];
   var text = String(value == null ? "" : value);
@@ -243,8 +242,8 @@ function parse_lifts_from_value(value, date) {
   while ((match = regex.exec(text)) !== null) {
     var isBodyweight = Boolean(match[1]);
     var isDumbbellPair = Boolean(match[4]);
-    var weight = isBodyweight ? "0" : (match[3] || match[6]);
-    var reps = match[2] || match[5] || match[7];
+    var weight = isBodyweight ? "0" : match[3];
+    var reps = match[2] || match[5];
     var lift = {
       "weight": weight,
       "reps": reps,

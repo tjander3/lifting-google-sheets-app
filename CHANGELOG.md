@@ -9,6 +9,6 @@
 - Added source-controlled trigger setup and persistent runtime status logging.
 - Added a separate test-project workflow, integration contracts, rollback and
   backup documentation, and full-cycle fixture tests.
-- Hardened workout parsing for separator typos, dumbbell pairs, bodyweight work,
-  incomplete entries, and high-repetition estimates.
+- Hardened workout parsing to reject separator typos while supporting dumbbell
+  pairs, bodyweight work, incomplete entries, and high-repetition estimates.
 - Fixed calculated-PR mutation while selecting the heaviest real lift.

@@ -65,8 +65,8 @@ depend directly on `SpreadsheetApp` and workbook layout.
 
 The test suite also covers the recorded macro's Apps Script API contract,
 complete 5/3/1 cycles and training-max changes, automation status recording,
-trigger deduplication, malformed entries, the historical `415:1` separator
-typo, dumbbell pairs such as `65s-10`, and bodyweight entries such as `bw-5`.
+trigger deduplication, malformed entries, strict separator handling, dumbbell
+pairs such as `65s-10`, and bodyweight entries such as `bw-5`.
 
 GitHub Actions runs the same test suite for every push and pull request. After a
 push to `main` passes, a separate deploy job restores the encrypted
@@ -96,13 +96,12 @@ GitHub Actions secret. Never print it, commit it, or place it in an artifact.
 Use `weight-reps`, for example `315-5`. A planned set with no completed reps,
 such as `315-`, is ignored. The parser also supports:
 
-- `415:1` as a tolerated historical typo for `415-1`. New entries should use a dash.
 - `65s-10` for a pair of 65-pound dumbbells. Volume counts both dumbbells.
 - `bw-5` for five bodyweight repetitions. The reps are recorded, but no load is
   invented for volume or estimated one-rep max calculations.
 
-Fractional repetitions such as `425-.25` are treated as incomplete attempts and
-do not count toward PRs or volume.
+Colon separators such as `415:1`, fractional repetitions such as `425-.25`, and
+incomplete plans are ignored and do not count toward PRs or volume.
 
 ## Production automation
 
