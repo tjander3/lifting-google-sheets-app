@@ -348,15 +348,15 @@ describe('public training stats', () => {
     };
   });
 
-  it('publishes current squat, bench, and deadlift TM and estimated 1RM only', () => {
+  it('publishes current squat, bench, and deadlift TM and real max only', () => {
     const progressionRows = [
       ['7/26/2026', 377.5, '', '', '', '', '', '', '', '', '', 445, '', '', '', '', '', '', '', '', '', 545],
       ['8/16/2026', 380, '', '', '', '', '', '', '', '', '', 450, '', '', '', '', '', '', '', '', '', 550],
       ['9/6/2026', 382.5, '', '', '', '', '', '', '', '', '', 455, '', '', '', '', '', '', '', '', '', 555],
     ];
     const prRows = [
-      ['Bench', '305-8', '11/24/2025', 378.2],
-      ['Squat', '370-7', '01/13/2026', 444],
+      ['Bench', '365-1', '03/02/2026', 365],
+      ['Squat', '440-1', '11/18/2025', 440],
       ['Deadlift', '545-1', '11/20/2025', 545],
       ['ShoulderPress', '205-1', '4/21/2023', 205],
     ];
@@ -366,13 +366,13 @@ describe('public training stats', () => {
       prRows,
       new Date('2026-08-22T16:00:00Z'),
     )).toEqual({
-      schemaVersion: 1,
+      schemaVersion: 2,
       asOf: '2026-08-16',
       unit: 'lb',
       lifts: [
-        { id: 'squat', name: 'Squat', trainingMax: 450, estimatedOneRepMax: 444 },
-        { id: 'bench', name: 'Bench', trainingMax: 380, estimatedOneRepMax: 378.2 },
-        { id: 'deadlift', name: 'Deadlift', trainingMax: 550, estimatedOneRepMax: 545 },
+        { id: 'squat', name: 'Squat', trainingMax: 450, max: 440 },
+        { id: 'bench', name: 'Bench', trainingMax: 380, max: 365 },
+        { id: 'deadlift', name: 'Deadlift', trainingMax: 550, max: 545 },
       ],
     });
   });
@@ -384,9 +384,9 @@ describe('public training stats', () => {
     ];
     expect(() => app.build_public_training_snapshot_(
       progressionRows,
-      [['Bench', '', '', 378.2], ['Squat', '', '', 444]],
+      [['Bench', '', '', 365], ['Squat', '', '', 440]],
       new Date('2026-08-22T16:00:00Z'),
-    )).toThrow('Missing deadlift estimated 1RM');
+    )).toThrow('Missing deadlift max');
   });
 });
 

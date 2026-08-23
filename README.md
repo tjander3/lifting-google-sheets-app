@@ -89,7 +89,7 @@ GitHub Actions secret. Never print it, commit it, or place it in an artifact.
 
 The production script also exposes a token-protected `doPost` web-app endpoint
 that returns only the current squat, bench, and deadlift training maxes and
-estimated one-rep maxes. A separate private publisher validates that six-value
+real maxes from the `write_prs`-maintained table. A separate private publisher validates that six-value
 snapshot and updates `tjander3.github.io`. Spreadsheet identifiers, workout
 history, and the endpoint token are never included in the response.
 

@@ -684,19 +684,19 @@ function build_public_training_snapshot_(progressionRows, prRows, now) {
   });
   if (!selected) throw new Error("No current training-max row found.");
 
-  var estimatedOneRepMaxes = {};
+  var maxes = {};
   prRows.forEach(function(row) {
     var id = String(row[0] || "").replace(/\s+/g, "").toLowerCase();
     if (["squat", "bench", "deadlift"].indexOf(id) === -1) return;
-    estimatedOneRepMaxes[id] = require_public_stat_number_(
+    maxes[id] = require_public_stat_number_(
       row[3],
-      id + " estimated 1RM"
+      id + " max"
     );
   });
 
   var lifts = PUBLIC_STATS_CONFIG.lifts.map(function(lift) {
-    if (!Object.prototype.hasOwnProperty.call(estimatedOneRepMaxes, lift.id)) {
-      throw new Error("Missing " + lift.id + " estimated 1RM.");
+    if (!Object.prototype.hasOwnProperty.call(maxes, lift.id)) {
+      throw new Error("Missing " + lift.id + " max.");
     }
     return {
       id: lift.id,
@@ -705,12 +705,12 @@ function build_public_training_snapshot_(progressionRows, prRows, now) {
         selected.row[lift.trainingMaxColumn],
         lift.id + " training max"
       ),
-      estimatedOneRepMax: estimatedOneRepMaxes[lift.id],
+      max: maxes[lift.id],
     };
   });
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     asOf: selected.date.iso,
     unit: "lb",
     lifts: lifts,
@@ -726,7 +726,9 @@ function get_public_training_stats_() {
   var progressionRows = progression
     .getRange(1, 1, progression.getLastRow(), 22)
     .getValues();
-  var prRows = prs.getRange(1, 5, prs.getLastRow(), 4).getValues();
+  // I:L is the real/heaviest-lift table maintained by write_prs. E:H is the
+  // calculated-estimate table and is intentionally not published.
+  var prRows = prs.getRange(1, 9, prs.getLastRow(), 4).getValues();
   return build_public_training_snapshot_(progressionRows, prRows, new Date());
 }
 

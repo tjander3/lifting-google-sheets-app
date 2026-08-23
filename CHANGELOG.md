@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-08-23
+
+- Changed the public training snapshot from calculated one-rep-max estimates
+  to the real max table maintained by `write_prs` and bumped its schema to 2.
+
 ## 2026-08-22
 
 - Published the reusable Apps Script source under the MIT License while keeping
