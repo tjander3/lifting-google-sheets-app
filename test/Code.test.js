@@ -80,7 +80,7 @@ describe('lift parsing and volume', () => {
 
   it('ignores incomplete plans, fractional reps, and date fragments', () => {
     expect(app.get_lifts_with_regex_from_array([
-      '245-', '425-.25', '2026-08-22',
+      '245-', '425-.25', '2026-08-22', '320- 320- 320-',
     ])).toEqual([]);
   });
 

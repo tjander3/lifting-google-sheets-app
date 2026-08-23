@@ -233,7 +233,9 @@ function parse_lifts_from_value(value, date) {
   // 415:1 (a likely separator typo) and 65s-10 (two 65 lb dumbbells).
   // A colon is accepted only for a 3-4 digit weight so ordinary times such as
   // 8:30 are not mistaken for lifts. Fractional reps are intentionally ignored.
-  var regex = /(?:^|[^\w.])(?:(bw)\s*-\s*(0|[1-9]\d*)|((?:0|[1-9]\d*)(?:\.\d+)?)(s)?\s*-\s*(0|[1-9]\d*)|(\d{3,4})\s*:\s*(0|[1-9]\d*))(?![\d.])/gi;
+  // Reps must begin immediately after the separator. This prevents planned
+  // sequences such as "320- 320- 320-" from becoming a false 320-rep set.
+  var regex = /(?:^|[^\w.])(?:(bw)\s*-(0|[1-9]\d*)|((?:0|[1-9]\d*)(?:\.\d+)?)(s)?\s*-(0|[1-9]\d*)|(\d{3,4})\s*:(0|[1-9]\d*))(?![\d.])/gi;
   var match;
   var lifts = [];
   var text = String(value == null ? "" : value);
