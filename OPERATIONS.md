@@ -2,14 +2,15 @@
 
 ## Production inventory
 
-- Container-bound Apps Script project: mapped by the committed `.clasp.json`.
-- GitHub: private repository; `main` tests and then deploys with `clasp push`.
+- Container-bound Apps Script project: mapped locally by ignored `.clasp.json`.
+- GitHub: public source repository; `main` tests and then deploys with `clasp push`.
 - Spreadsheet formula entrypoint: `FIVE_THREE_ONE_SSL`.
 - Spreadsheet macro: `Startnewweek` (**Start new week**).
 - Installable trigger: `write_prs`, daily near 12:05 AM America/New_York.
 - Persistent operational state: latest `write_prs` result in Script Properties.
 - External services: Google Sheets, Apps Script, Script Properties, GitHub
-  Actions, and the encrypted GitHub `CLASPRC_JSON_BASE64` secret.
+  Actions, and the encrypted GitHub `CLASPRC_JSON_BASE64` and `APPS_SCRIPT_ID`
+  secrets.
 
 There are no simple or installable edit triggers in the current project. Apps
 Script installable triggers are not represented in `appsscript.json`, so run
@@ -28,8 +29,8 @@ Do not test layout-changing macros against the live workbook.
 5. In the test spreadsheet, verify `Startnewweek`, a full cycle rollover, a
    training-max change, formulas, and PR output before deploying to production.
 
-The automatic GitHub deployment always uses `.clasp.json`; it never targets the
-test project.
+The automatic GitHub deployment creates `.clasp.json` from the protected
+`APPS_SCRIPT_ID` repository secret; it never targets the test project.
 
 ## Deployment verification
 

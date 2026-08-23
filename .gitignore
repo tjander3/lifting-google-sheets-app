@@ -1,7 +1,9 @@
 node_modules/
 
-# clasp OAuth credentials contain secrets. The project mapping is safe to commit.
+# clasp OAuth credentials contain secrets. Project mappings are local because
+# Apps Script IDs can reveal deployment metadata even though they are not credentials.
 .clasprc.json
+.clasp.json
 .clasp.test.json
 .clasp-login*.out
 .clasp-login*.err

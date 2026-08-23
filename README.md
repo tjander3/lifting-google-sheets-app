@@ -1,8 +1,13 @@
-# Lifting Google Sheets app
+# Lifting Google Sheets automation
 
-Google Apps Script helpers and macros for the lifting spreadsheet. The files in
-this repository are the source of truth; `clasp` synchronizes them with the
-container-bound Apps Script project.
+Source-controlled Google Apps Script helpers and macros for a lifting workbook.
+The project generates 5/3/1 cycles, calculates volume and estimated PRs, manages
+the weekly rollover, and records automation health. Its core logic is tested
+locally with Vitest and successful `main` builds deploy through GitHub Actions.
+
+This repository contains only reusable source and synthetic test data. The live
+Google Sheet, workout history, Apps Script project ID, and deployment credentials
+remain private.
 
 ## Prerequisites
 
@@ -10,39 +15,43 @@ container-bound Apps Script project.
 - Access to the linked Google Sheet and Apps Script project
 - The Apps Script API enabled at <https://script.google.com/home/usersettings>
 
-Install the pinned project dependencies:
+Install the pinned project dependencies from Git Bash:
 
-```powershell
+```bash
 npm install
 ```
 
 Authorize `clasp` once on a new computer:
 
-```powershell
+```bash
 npx clasp login
 ```
 
 The OAuth token is stored outside this repository by default. Never commit a
 `.clasprc.json`, client secret, credential file, or token.
 
+Copy `.clasp.example.json` to `.clasp.json`, then replace the placeholder with
+the script ID from **Apps Script > Project Settings**. The local mapping is
+ignored by Git.
+
 ## Development workflow
 
 1. Edit the files under `src/` locally.
 2. Run the automated tests:
 
-   ```powershell
+   ```bash
    npm test
    ```
 
 3. Review the files that `clasp` will upload:
 
-   ```powershell
+   ```bash
    npm run apps:status
    ```
 
 4. Test and upload the complete project to Apps Script:
 
-   ```powershell
+   ```bash
    npm run apps:push
    ```
 
@@ -70,8 +79,9 @@ pairs such as `65s-10`, and bodyweight entries such as `bw-5`.
 
 GitHub Actions runs the same test suite for every push and pull request. After a
 push to `main` passes, a separate deploy job restores the encrypted
-`CLASPRC_JSON_BASE64` repository secret and runs `clasp push`. Pull requests and
-non-`main` branches never receive the credential and never deploy.
+`CLASPRC_JSON_BASE64` credential and `APPS_SCRIPT_ID` project mapping from
+repository secrets, then runs `clasp push`. Pull requests and non-`main`
+branches never receive the secrets and never deploy.
 
 The deploy credential is a base64-encoded copy of the local `~/.clasprc.json`.
 It contains an OAuth refresh token and must only be stored as an encrypted
@@ -122,3 +132,7 @@ and rows written in the execution log and Script Properties. Run
 
 See [OPERATIONS.md](OPERATIONS.md) for the test-sheet, verification, backup, and
 rollback procedures.
+
+## License
+
+This project is available under the [MIT License](LICENSE).

@@ -2,7 +2,8 @@
 
 ## 2026-08-22
 
-- Moved the container-bound lifting Apps Script into a private GitHub repository.
+- Published the reusable Apps Script source under the MIT License while keeping
+  spreadsheet data, project mappings, and deployment credentials private.
 - Added automated tests and production deployment after successful `main` tests.
 - Added the 5/3/1 three-set 40/50/60 deload week.
 - Batched PR reads and writes to eliminate the six-minute `write_prs` timeout.

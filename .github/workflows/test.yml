@@ -59,6 +59,16 @@ jobs:
           printf '%s' "$CLASPRC_JSON_BASE64" | base64 --decode > "$HOME/.clasprc.json"
           chmod 600 "$HOME/.clasprc.json"
 
+      - name: Configure Apps Script project
+        env:
+          APPS_SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
+        run: |
+          if [ -z "$APPS_SCRIPT_ID" ]; then
+            echo "::error::Missing APPS_SCRIPT_ID repository secret."
+            exit 1
+          fi
+          printf '{"scriptId":"%s","rootDir":"src"}\n' "$APPS_SCRIPT_ID" > .clasp.json
+
       - name: Show Apps Script files
         run: npm run apps:status
 
@@ -67,4 +77,4 @@ jobs:
 
       - name: Remove clasp credentials
         if: always()
-        run: rm -f "$HOME/.clasprc.json"
+        run: rm -f "$HOME/.clasprc.json" .clasp.json
