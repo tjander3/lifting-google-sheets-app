@@ -63,6 +63,11 @@ deload. Spreadsheet integration and the
 recorded `Startnewweek` macro still require a test spreadsheet because they
 depend directly on `SpreadsheetApp` and workbook layout.
 
+The test suite also covers the recorded macro's Apps Script API contract,
+complete 5/3/1 cycles and training-max changes, automation status recording,
+trigger deduplication, malformed entries, the historical `415:1` separator
+typo, dumbbell pairs such as `65s-10`, and bodyweight entries such as `bw-5`.
+
 GitHub Actions runs the same test suite for every push and pull request. After a
 push to `main` passes, a separate deploy job restores the encrypted
 `CLASPRC_JSON_BASE64` repository secret and runs `clasp push`. Pull requests and
@@ -82,3 +87,39 @@ GitHub Actions secret. Never print it, commit it, or place it in an artifact.
 | `npm run apps:pull` | Replace local Apps Script files with the remote source |
 | `npm run apps:push` | Run tests, then upload the project |
 | `npm run apps:open` | Open the linked Apps Script editor |
+| `npm run apps:test:status` | List files targeting the optional test Apps Script project |
+| `npm run apps:test:push` | Test and upload to the optional test Apps Script project |
+| `npm run apps:test:open` | Open the optional test Apps Script project |
+
+## Workout entry format
+
+Use `weight-reps`, for example `315-5`. A planned set with no completed reps,
+such as `315-`, is ignored. The parser also supports:
+
+- `415:1` as a tolerated historical typo for `415-1`. New entries should use a dash.
+- `65s-10` for a pair of 65-pound dumbbells. Volume counts both dumbbells.
+- `bw-5` for five bodyweight repetitions. The reps are recorded, but no load is
+  invented for volume or estimated one-rep max calculations.
+
+Fractional repetitions such as `425-.25` are treated as incomplete attempts and
+do not count toward PRs or volume.
+
+## Production automation
+
+The production project has three externally invoked entrypoints:
+
+- `FIVE_THREE_ONE_SSL` is called by spreadsheet formulas.
+- `Startnewweek` is the bound spreadsheet macro named **Start new week**.
+- `write_prs` is invoked by an installable daily time trigger.
+
+After linking a new Apps Script project, run `setupTriggers` once in the Apps
+Script editor. It keeps one existing `write_prs` trigger, or replaces duplicates
+with one trigger scheduled daily near 12:05 AM America/New_York. Trigger state is
+owned by Google and is not included in `clasp push`.
+
+Every `write_prs` run records start time, finish time, duration, success/failure,
+and rows written in the execution log and Script Properties. Run
+`log_write_prs_status` in the editor to print the latest recorded result.
+
+See [OPERATIONS.md](OPERATIONS.md) for the test-sheet, verification, backup, and
+rollback procedures.

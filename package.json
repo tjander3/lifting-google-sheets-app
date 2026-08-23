@@ -9,7 +9,10 @@
     "apps:status": "clasp show-file-status",
     "apps:pull": "clasp pull",
     "apps:push": "npm test && clasp push",
-    "apps:open": "clasp open-script"
+    "apps:open": "clasp open-script",
+    "apps:test:status": "clasp -P .clasp.test.json show-file-status",
+    "apps:test:push": "npm test && clasp -P .clasp.test.json push",
+    "apps:test:open": "clasp -P .clasp.test.json open-script"
   },
   "devDependencies": {
     "@google/clasp": "^3.4.0",

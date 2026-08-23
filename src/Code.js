@@ -1,6 +1,11 @@
-//TODO ability to have 1rm max only for "real" maxes
-// TODO beter to write pr as we get them vs get all at once
-// TODO chinups ability to get weighted and bw
+var AUTOMATION_CONFIG = {
+  writePrsHandler: "write_prs",
+  writePrsHour: 0,
+  writePrsMinute: 5,
+  timeZone: "America/New_York",
+  statusPropertyPrefix: "automation_status_",
+};
+
 function hello_world() {
   Logger.log("Hello world test log")
   return "Hello world";
@@ -106,11 +111,8 @@ function calculate_volume(lifts) {
   var volume = 0;
   for (var element in lifts) {
     var lift = lifts[element];
-    // TODO deal with double nested?
-    Logger.log("lift lift");
-    Logger.log(lift);
-    volume += parseFloat(lift["weight"]) * parseFloat(lift["reps"]);
-    Logger.log(volume);
+    var multiplier = lift["volumeMultiplier"] || 1;
+    volume += parseFloat(lift["weight"]) * parseFloat(lift["reps"]) * multiplier;
   }
   return volume
 }
@@ -226,60 +228,55 @@ function get_date(sheet, col) {
 }
 
 
-function get_lifts_with_regex_from_array(array) {
-  const regex = /\d+-\d+/gm;
-  let m;
-  var lifts = []
-  for (var element in array) {
-    var reg_match = array[element];
-    while ((m = regex.exec(reg_match)) !== null) {
-      // This is necessary to avoid infinite loops with zero-width matches
-      if (m.index === regex.lastIndex) {
-        regex.lastIndex++;
-      }
+function parse_lifts_from_value(value, date) {
+  // Canonical input is weight-reps. Also tolerate two historical formats:
+  // 415:1 (a likely separator typo) and 65s-10 (two 65 lb dumbbells).
+  // A colon is accepted only for a 3-4 digit weight so ordinary times such as
+  // 8:30 are not mistaken for lifts. Fractional reps are intentionally ignored.
+  var regex = /(?:^|[^\w.])(?:(bw)\s*-\s*(0|[1-9]\d*)|((?:0|[1-9]\d*)(?:\.\d+)?)(s)?\s*-\s*(0|[1-9]\d*)|(\d{3,4})\s*:\s*(0|[1-9]\d*))(?![\d.])/gi;
+  var match;
+  var lifts = [];
+  var text = String(value == null ? "" : value);
 
-      // The result can be accessed through the `m`-variable.
-      m.forEach((match, groupIndex) => {
-        var lift = match.split("-");
-        lifts.push({
-          "weight": lift[0],
-          "reps": lift[1],
-          "1rm": calculate_max(lift[0], lift[1]),
+  while ((match = regex.exec(text)) !== null) {
+    var isBodyweight = Boolean(match[1]);
+    var isDumbbellPair = Boolean(match[4]);
+    var weight = isBodyweight ? "0" : (match[3] || match[6]);
+    var reps = match[2] || match[5] || match[7];
+    var lift = {
+      "weight": weight,
+      "reps": reps,
+      "1rm": calculate_max(weight, reps),
+    };
 
-        })
-      });
-      //"date": get_date(sheet, col),
+    if (isBodyweight) {
+      lift["bodyweight"] = true;
     }
+    if (isDumbbellPair) {
+      lift["dumbbellPair"] = true;
+      lift["volumeMultiplier"] = 2;
+    }
+    if (date !== undefined) {
+      lift["date"] = date;
+    }
+    lifts.push(lift);
   }
   return lifts;
 }
 
+function get_lifts_with_regex_from_array(array) {
+  var lifts = [];
+  for (var element in array) {
+    lifts.push(...parse_lifts_from_value(array[element]));
+  }
+  return lifts;
+}
 
 function get_lifts_with_regex(rows, dates) {
-  const regex = /\d+-\d+/gm;
-  let m;
-  var lifts = []
-
+  var lifts = [];
   for (var row in rows) {
     for (var col in rows[row]) {
-      var str = rows[row][col];
-      while ((m = regex.exec(str)) !== null) {
-        // This is necessary to avoid infinite loops with zero-width matches
-        if (m.index === regex.lastIndex) {
-          regex.lastIndex++;
-        }
-
-        // The result can be accessed through the `m`-variable.
-        m.forEach((match, groupIndex) => {
-          var lift = match.split("-");
-          lifts.push({
-            "weight": lift[0],
-            "reps": lift[1],
-            "1rm": calculate_max(lift[0], lift[1]),
-            "date": dates[col],
-          })
-        });
-      }
+      lifts.push(...parse_lifts_from_value(rows[row][col], dates[col]));
     }
   }
   return lifts;
@@ -287,11 +284,13 @@ function get_lifts_with_regex(rows, dates) {
 
 function calculate_max(weight, reps) {
   var max_percentage = [1,1.03,1.06,1.09,1.13,1.16,1.2,1.24,1.27,1.33];
-  if (reps < 1) {
+  var numericWeight = Number(weight);
+  var numericReps = Number(reps);
+  if (!Number.isFinite(numericWeight) || !Number.isFinite(numericReps) || numericReps < 1) {
     return 0;
-  } else {
-    return weight * max_percentage[parseInt(reps) - 1];
   }
+  var percentageIndex = Math.min(Math.floor(numericReps), max_percentage.length) - 1;
+  return numericWeight * max_percentage[percentageIndex];
 }
 
 function get_max_lift(lifts) {
@@ -306,16 +305,17 @@ function get_max_lift(lifts) {
     //  Logger.log(curr_lift);
     //}
     if (curr_lift["1rm"] > max["1rm"]) {
-      max = curr_lift;
+      max = JSON.parse(JSON.stringify(curr_lift));
     }
 
-    //Logger.log(curr_lift)
-    if (parseInt(curr_lift["weight"]) > parseInt(real_max["1rm"]) && parseInt(curr_lift["reps"]) != 0) {
-      real_max = curr_lift;
+    var currentWeight = Number(curr_lift["weight"]);
+    var currentReps = Number(curr_lift["reps"]);
+    var realWeight = Number(real_max["1rm"]);
+    if (currentWeight > realWeight && currentReps !== 0) {
+      real_max = JSON.parse(JSON.stringify(curr_lift));
       real_max["1rm"] = real_max["weight"];
-    } else if (parseInt(curr_lift["weight"]) == parseInt(real_max["1rm"]) && parseInt(curr_lift["reps"]) > parseInt(real_max["reps"]) && parseInt(curr_lift["reps"]) != 0) {
+    } else if (currentWeight === realWeight && currentReps > Number(real_max["reps"] || 0) && currentReps !== 0) {
       real_max = JSON.parse(JSON.stringify(curr_lift))
-      //real_max = curr_lift;
       real_max["1rm"] = real_max["weight"];
     }
   }
@@ -331,9 +331,7 @@ function get_prs() {
   var lift_locations = get_lift_locations();
   var sheets = {};
   var dates_by_sheet = {};
-  Logger.log(lift_locations);
   for (var key in lift_locations) {
-    Logger.log("Lift is " + key);
     var sheet_name = lift_locations[key]["sheet"];
     if (!sheets[sheet_name]) {
       sheets[sheet_name] = get_sheet(sheet_name);
@@ -350,11 +348,14 @@ function get_prs() {
     real_max_lift["lift"] = key;
 
     real_max_lifts.push(real_max_lift);
-    Logger.log(max_lift);
-    Logger.log(real_max_lift);
-    //break;
   }
   return [max_lifts, real_max_lifts];
+}
+
+function format_lift_entry(max_lift) {
+  var displayWeight = max_lift["bodyweight"] ? "bw" : max_lift["weight"];
+  var suffix = max_lift["dumbbellPair"] ? "s" : "";
+  return displayWeight + suffix + "-" + max_lift["reps"];
 }
 
 function write_prs_helper(max_lifts) {
@@ -363,7 +364,7 @@ function write_prs_helper(max_lifts) {
     lift_name = lift_name.charAt(0).toUpperCase() + lift_name.slice(1)
     return [
       lift_name,
-      max_lift["weight"] + "-" + max_lift["reps"],
+      format_lift_entry(max_lift),
       max_lift["date"],
       max_lift["1rm"],
     ];
@@ -371,26 +372,105 @@ function write_prs_helper(max_lifts) {
 }
 
 function write_prs() {
-  var sheet = get_sheet("prs");
-  var max_lifts_arr = get_prs();
-  var max_lifts = max_lifts_arr[0];
-  var real_max_lifts = max_lifts_arr[1];
-  var calculated_rows = write_prs_helper(max_lifts);
-  var real_rows = write_prs_helper(real_max_lifts);
-  var row_count = Math.max(calculated_rows.length, real_rows.length);
-  if (row_count === 0) {
-    return;
-  }
+  var startedAt = Date.now();
+  console.log("write_prs started");
+  try {
+    var sheet = get_sheet("prs");
+    var max_lifts_arr = get_prs();
+    var max_lifts = max_lifts_arr[0];
+    var real_max_lifts = max_lifts_arr[1];
+    var calculated_rows = write_prs_helper(max_lifts);
+    var real_rows = write_prs_helper(real_max_lifts);
+    var row_count = Math.max(calculated_rows.length, real_rows.length);
+    if (row_count === 0) {
+      record_automation_run("write_prs", "success", startedAt, { rowsWritten: 0 });
+      return { rowsWritten: 0 };
+    }
 
-  var output = [];
-  for (var i = 0; i < row_count; i++) {
-    output.push(
-      (calculated_rows[i] || ["", "", "", ""])
-        .concat(real_rows[i] || ["", "", "", ""])
+    var output = [];
+    for (var i = 0; i < row_count; i++) {
+      output.push(
+        (calculated_rows[i] || ["", "", "", ""])
+          .concat(real_rows[i] || ["", "", "", ""])
+      );
+    }
+    sheet.getRange(4, 5, row_count, 8).setValues(output);
+    var result = { rowsWritten: row_count };
+    record_automation_run("write_prs", "success", startedAt, result);
+    return result;
+  } catch (error) {
+    record_automation_run("write_prs", "failure", startedAt, {
+      error: error && error.stack ? error.stack : String(error),
+    });
+    throw error;
+  }
+}
+
+function record_automation_run(jobName, status, startedAt, details) {
+  var record = {
+    job: jobName,
+    status: status,
+    startedAt: new Date(startedAt).toISOString(),
+    finishedAt: new Date().toISOString(),
+    durationMs: Date.now() - startedAt,
+    details: details || {},
+  };
+  console.log(JSON.stringify(record));
+
+  // Monitoring must never turn a successful spreadsheet update into a failure.
+  try {
+    PropertiesService.getScriptProperties().setProperty(
+      AUTOMATION_CONFIG.statusPropertyPrefix + jobName,
+      JSON.stringify(record)
     );
+  } catch (monitoringError) {
+    console.warn("Unable to persist automation status: " + monitoringError);
   }
-  sheet.getRange(4, 5, row_count, 8).setValues(output);
+  return record;
+}
 
+function get_automation_status(jobName) {
+  var value = PropertiesService.getScriptProperties().getProperty(
+    AUTOMATION_CONFIG.statusPropertyPrefix + jobName
+  );
+  return value ? JSON.parse(value) : null;
+}
+
+function log_write_prs_status() {
+  var status = get_automation_status("write_prs");
+  console.log(JSON.stringify(status));
+  return status;
+}
+
+function setupTriggers() {
+  var handler = AUTOMATION_CONFIG.writePrsHandler;
+  var matchingTriggers = ScriptApp.getProjectTriggers().filter(function(trigger) {
+    return trigger.getHandlerFunction() === handler;
+  });
+
+  if (matchingTriggers.length === 1) {
+    return { handler: handler, created: false, removedDuplicates: 0 };
+  }
+
+  matchingTriggers.forEach(function(trigger) {
+    ScriptApp.deleteTrigger(trigger);
+  });
+  ScriptApp.newTrigger(handler)
+    .timeBased()
+    .atHour(AUTOMATION_CONFIG.writePrsHour)
+    .nearMinute(AUTOMATION_CONFIG.writePrsMinute)
+    .everyDays(1)
+    .inTimezone(AUTOMATION_CONFIG.timeZone)
+    .create();
+
+  var result = {
+    handler: handler,
+    created: true,
+    removedDuplicates: matchingTriggers.length,
+    schedule: "daily near 12:05 AM " + AUTOMATION_CONFIG.timeZone,
+  };
+  console.log(JSON.stringify(result));
+  return result;
 }
 
 

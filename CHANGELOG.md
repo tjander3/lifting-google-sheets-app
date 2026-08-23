@@ -1,0 +1,14 @@
+# Changelog
+
+## 2026-08-22
+
+- Moved the container-bound lifting Apps Script into a private GitHub repository.
+- Added automated tests and production deployment after successful `main` tests.
+- Added the 5/3/1 three-set 40/50/60 deload week.
+- Batched PR reads and writes to eliminate the six-minute `write_prs` timeout.
+- Added source-controlled trigger setup and persistent runtime status logging.
+- Added a separate test-project workflow, integration contracts, rollback and
+  backup documentation, and full-cycle fixture tests.
+- Hardened workout parsing for separator typos, dumbbell pairs, bodyweight work,
+  incomplete entries, and high-repetition estimates.
+- Fixed calculated-PR mutation while selecting the heaviest real lift.

@@ -2,6 +2,7 @@ node_modules/
 
 # clasp OAuth credentials contain secrets. The project mapping is safe to commit.
 .clasprc.json
+.clasp.test.json
 .clasp-login*.out
 .clasp-login*.err
 
