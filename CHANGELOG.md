@@ -4,6 +4,8 @@
 
 - Changed the public training snapshot from calculated one-rep-max estimates
   to the real max table maintained by `write_prs` and bumped its schema to 2.
+- Kept `hello_world` as a timestamped manual logging smoke test while removing
+  obsolete debug helpers, noisy logs, stale comments, and a redundant variable.
 
 ## 2026-08-22
 

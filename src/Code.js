@@ -6,28 +6,10 @@ var AUTOMATION_CONFIG = {
   statusPropertyPrefix: "automation_status_",
 };
 
+// Manual smoke test for verifying Apps Script execution and log output.
 function hello_world() {
-  Logger.log("Hello world test log")
+  Logger.log("Hello world test log: " + new Date().toISOString());
   return "Hello world";
-}
-
-function test_get_volume() {
-  var volume = get_volume("bench", 3, 2026);
-  //var volume = get_volume("deadlift", 6, 2024);
-  //var volume = get_volume("bench", 46, 2021);
-  //var volume = get_volume("bench", 1, 2023);
-  Logger.log(volume);
-}
-
-function test_get_calculated_pr() {
-
-}
-
-function test_get_real_pr() {
-  Logger.log("Start of function, test_get_real_pr")
-  var prs = get_prs()
-  Logger.log(prs)
-
 }
 
 function get_sheet_dates(sheet_name) {
@@ -52,27 +34,16 @@ function get_sheet_dates_from_sheet(sheet) {
 
 
 function get_lifting_days_in_week(liftLocations, week, year) {
-  //Logger.log(liftLocations);
   // Get the rows of the days lifted in the week given
   var row = [];
-  //var sheet = get_sheet(liftLocations["sheet"]);
-  // var dates = get_sheet_dates(liftLocations["sheet"]); // TODO bring this back
   var dates = get_sheet_dates(liftLocations);
   var arrayLength = dates.length;
   var firstWeekFound = false;
   for (var i = 0; i < arrayLength; i++) {
-    // console.log("---------------");
-    // console.log(dates[i]);  // TODO remove
-
     var date = new Date(dates[i]);
-    console.log(date.getWeek());
-    console.log(week);
-    console.log(year);
     if (date.getWeek() == week && date.getFullYear() == year) {
       firstWeekFound = true;
       row.push(i + 2); // Plus 1 because sheets are 0 index and + another 1 because first row is just lift names
-      // console.log("Found the same week");
-      // console.log(date);
     } else if (firstWeekFound) {
       // If we already found one match and no longer find anymore we are done with the current week
       break;
@@ -86,7 +57,7 @@ function get_lifting_days_in_week(liftLocations, week, year) {
 function get_lifts_in_row(lift_locations, lift, lifting_days) {
   // Get all the dates from a sheet
   var sheet_name = lift_locations[lift]["sheet"];
-  var sheet = get_sheet(sheet_name);  // TODO would it be faster to pass the sheet
+  var sheet = get_sheet(sheet_name);
 
   var lifts = [];
   var arrayLength = lifting_days.length;
@@ -120,12 +91,8 @@ function calculate_volume(lifts) {
 function get_volume(lift, week, year) {
   var lift_locations = get_lift_locations();
   var lifting_days = get_lifting_days_in_week(lift_locations[lift]["sheet"], week, year)
-  // TODO left off here
   var lifts = get_lifts_in_row(lift_locations, lift, lifting_days);
-  // TODO this is not logging the correct thing
-  Logger.log(lifts);
-  var volume = calculate_volume(lifts);
-  return volume;
+  return calculate_volume(lifts);
 }
 
 function get_lift_locations() {
@@ -297,14 +264,8 @@ function calculate_max(weight, reps) {
 function get_max_lift(lifts) {
   var max = {"1rm": 0};
   var real_max = {"1rm": 0}
-  // var min = 100000; // Noone is going to lift this much
   for(var lift in lifts) {
     var curr_lift = lifts[lift];
-    // Here is an example on how to compare some dates
-    //Logger.log(curr_lift['date'])
-    //if (+curr_lift['date']===+(new Date(2021, 3, 19, 3))) {
-    //  Logger.log(curr_lift);
-    //}
     if (curr_lift["1rm"] > max["1rm"]) {
       max = JSON.parse(JSON.stringify(curr_lift));
     }
@@ -323,10 +284,7 @@ function get_max_lift(lifts) {
   return [max, real_max];
 }
 
-// TODO get calulated prs
-// TODO get non calculated prs
 function get_prs() {
-  var tmp_max_lifts = []; // Usd for for loop
   var max_lifts = [];
   var real_max_lifts = [];
   var lift_locations = get_lift_locations();
@@ -341,9 +299,9 @@ function get_prs() {
     var sheet = sheets[sheet_name];
     var data = get_rows(sheet, lift_locations[key]);
     var lifts = get_lifts_with_regex(data, dates_by_sheet[sheet_name]);
-    var tmp_max_lifts = get_max_lift(lifts);
-    var max_lift = tmp_max_lifts[0];
-    var real_max_lift = tmp_max_lifts[1];
+    var lift_maxes = get_max_lift(lifts);
+    var max_lift = lift_maxes[0];
+    var real_max_lift = lift_maxes[1];
     max_lift["lift"] = key;
     max_lifts.push(max_lift);
     real_max_lift["lift"] = key;
@@ -475,21 +433,6 @@ function setupTriggers() {
 }
 
 
-// Date.prototype.getWeek = function () {
-//   var onejan = new Date(this.getFullYear(),0,1);
-//   var today = new Date(this.getFullYear(),this.getMonth(),this.getDate());
-//   var dayOfYear = ((today - onejan + 86400000)/86400000);
-//   return Math.ceil(dayOfYear/7)
-//   /*
-//   // Old way for this to work
-//   var d = new Date(Date.UTC(this.getFullYear(), this.getMonth(), this.getDate()));
-//   d.setUTCDate(d.getUTCDate() - d.getUTCDay());
-//   var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-//   // TODO tyler added + 1
-//   return 1 + Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-//   */
-// }
-
 /**
  * Returns the week number for this date.  dowOffset is the day of week the week
  * "starts" on for your locale - it can be from 0 to 6. If dowOffset is 1 (Monday),
@@ -511,8 +454,8 @@ Date.prototype.getWeek = function (dowOffset) {
     if(day < 4) {
         weeknum = Math.floor((daynum+day-1)/7) + 1;
         if(weeknum > 52) {
-            nYear = new Date(this.getFullYear() + 1,0,1);
-            nday = nYear.getDay() - dowOffset;
+            var nYear = new Date(this.getFullYear() + 1,0,1);
+            var nday = nYear.getDay() - dowOffset;
             nday = nday >= 0 ? nday : nday + 7;
             /*if the next year starts before the middle of
               the week, it is week #1 of that year*/
@@ -524,21 +467,6 @@ Date.prototype.getWeek = function (dowOffset) {
     }
     return weeknum;
 };
-
-//// Hellper functions from others
-//// Returns the ISO week of the date.
-//Date.prototype.getWeek = function() {
-//  var date = new Date(this.getTime());
-//  date.setHours(0, 0, 0, 0);
-//  // Thursday in current week decides the year.
-//  date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
-//  // January 4 is always in week 1.
-//  var week1 = new Date(date.getFullYear(), 0, 4);
-//  // Adjust to Thursday in week 1 and count number of weeks from date to week1.
-//  // TODO Tyler changed 1 + to 2 +
-//  return 2 + Math.round(((date.getTime() - week1.getTime()) / 86400000
-//                        - 3 + (week1.getDay() + 6) % 7) / 7);
-//}
 
 /**
  * FIVE_THREE_ONE_SSL(training_max, last_percentage)

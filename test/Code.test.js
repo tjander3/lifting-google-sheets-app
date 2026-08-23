@@ -7,6 +7,19 @@ beforeEach(() => {
   app = loadAppsScript();
 });
 
+describe('hello_world', () => {
+  it('provides a manual logging smoke test with a timestamp', () => {
+    const log = vi.fn();
+    app = loadAppsScript({ Logger: { log } });
+
+    expect(app.hello_world()).toBe('Hello world');
+    expect(log).toHaveBeenCalledOnce();
+    expect(log.mock.calls[0][0]).toMatch(
+      /^Hello world test log: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+    );
+  });
+});
+
 describe('calculate_max', () => {
   it('returns the entered weight for a one-rep set', () => {
     expect(app.calculate_max(225, 1)).toBe(225);

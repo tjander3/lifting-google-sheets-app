@@ -12,12 +12,17 @@
   Actions, and the encrypted GitHub `CLASPRC_JSON_BASE64` and `APPS_SCRIPT_ID`
   secrets.
 - Public stats: the web app accepts token-authenticated POST requests and returns
-  only squat, bench, and deadlift TM/estimated-1RM values. The token lives in
-  Script Properties and the separate private `lifting-stats-publisher` repo.
+  only squat, bench, and deadlift training-max and recorded-max values. The token
+  lives in Script Properties and the separate private `lifting-stats-publisher`
+  repo.
 
 There are no simple or installable edit triggers in the current project. Apps
 Script installable triggers are not represented in `appsscript.json`, so run
 `setupTriggers` after linking a replacement project or if trigger state is lost.
+
+To verify that the Apps Script editor can execute the project and display logs,
+select `hello_world`, click **Run**, and inspect the execution log. This smoke
+test only writes a timestamped greeting to the log; it does not modify the sheet.
 
 ## Safe test spreadsheet
 
