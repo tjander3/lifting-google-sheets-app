@@ -13,3 +13,5 @@
 - Hardened workout parsing to reject separator typos while supporting dumbbell
   pairs, bodyweight work, incomplete entries, and high-repetition estimates.
 - Fixed calculated-PR mutation while selecting the heaviest real lift.
+- Added a token-protected, six-value public training-stat endpoint and automatic
+  web-app redeployment support for the private GitHub Pages publisher.

@@ -335,6 +335,61 @@ describe('FIVE_THREE_ONE_SSL', () => {
   });
 });
 
+describe('public training stats', () => {
+  beforeEach(() => {
+    app.Utilities = {
+      formatDate: (value, _timeZone, pattern) => {
+        const date = new Date(value);
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        return pattern === 'yyyyMMdd' ? `${year}${month}${day}` : `${year}-${month}-${day}`;
+      },
+    };
+  });
+
+  it('publishes current squat, bench, and deadlift TM and estimated 1RM only', () => {
+    const progressionRows = [
+      ['7/26/2026', 377.5, '', '', '', '', '', '', '', '', '', 445, '', '', '', '', '', '', '', '', '', 545],
+      ['8/16/2026', 380, '', '', '', '', '', '', '', '', '', 450, '', '', '', '', '', '', '', '', '', 550],
+      ['9/6/2026', 382.5, '', '', '', '', '', '', '', '', '', 455, '', '', '', '', '', '', '', '', '', 555],
+    ];
+    const prRows = [
+      ['Bench', '305-8', '11/24/2025', 378.2],
+      ['Squat', '370-7', '01/13/2026', 444],
+      ['Deadlift', '545-1', '11/20/2025', 545],
+      ['ShoulderPress', '205-1', '4/21/2023', 205],
+    ];
+
+    expect(app.build_public_training_snapshot_(
+      progressionRows,
+      prRows,
+      new Date('2026-08-22T16:00:00Z'),
+    )).toEqual({
+      schemaVersion: 1,
+      asOf: '2026-08-16',
+      unit: 'lb',
+      lifts: [
+        { id: 'squat', name: 'Squat', trainingMax: 450, estimatedOneRepMax: 444 },
+        { id: 'bench', name: 'Bench', trainingMax: 380, estimatedOneRepMax: 378.2 },
+        { id: 'deadlift', name: 'Deadlift', trainingMax: 550, estimatedOneRepMax: 545 },
+      ],
+    });
+  });
+
+  it('rejects future rows and missing requested lifts', () => {
+    const progressionRows = [
+      ['8/16/2026', 380, '', '', '', '', '', '', '', '', '', 450, '', '', '', '', '', '', '', '', '', 550],
+      ['9/6/2026', 382.5, '', '', '', '', '', '', '', '', '', 455, '', '', '', '', '', '', '', '', '', 555],
+    ];
+    expect(() => app.build_public_training_snapshot_(
+      progressionRows,
+      [['Bench', '', '', 378.2], ['Squat', '', '', 444]],
+      new Date('2026-08-22T16:00:00Z'),
+    )).toThrow('Missing deadlift estimated 1RM');
+  });
+});
+
 describe('Startnewweek spreadsheet contract', () => {
   it('inserts the new column, autofills the header, and shifts the history', () => {
     const calls = [];

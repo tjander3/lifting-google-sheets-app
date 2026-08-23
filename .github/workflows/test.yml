@@ -4,6 +4,7 @@ on:
   push:
     branches: ['**']
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -29,7 +30,7 @@ jobs:
 
   deploy:
     name: Deploy to Apps Script
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: test
     runs-on: ubuntu-latest
     concurrency:
@@ -74,6 +75,23 @@ jobs:
 
       - name: Push to Apps Script
         run: npx clasp push
+
+      - name: Redeploy public stats endpoint
+        env:
+          PUBLIC_STATS_DEPLOYMENT_ID: ${{ secrets.PUBLIC_STATS_DEPLOYMENT_ID }}
+        run: |
+          if [ -z "$PUBLIC_STATS_DEPLOYMENT_ID" ]; then
+            echo "::notice::PUBLIC_STATS_DEPLOYMENT_ID is not configured; skipping the initial web app redeploy."
+            exit 0
+          fi
+          VERSION_NUMBER=$(npx clasp --json version "GitHub $GITHUB_SHA" | jq -r '.versionNumber')
+          if ! [[ "$VERSION_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::error::Unable to create an Apps Script version."
+            exit 1
+          fi
+          npx clasp --json redeploy "$PUBLIC_STATS_DEPLOYMENT_ID" \
+            --versionNumber "$VERSION_NUMBER" \
+            --description "Public training stats from $GITHUB_SHA"
 
       - name: Remove clasp credentials
         if: always()

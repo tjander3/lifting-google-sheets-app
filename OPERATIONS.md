@@ -11,6 +11,9 @@
 - External services: Google Sheets, Apps Script, Script Properties, GitHub
   Actions, and the encrypted GitHub `CLASPRC_JSON_BASE64` and `APPS_SCRIPT_ID`
   secrets.
+- Public stats: the web app accepts token-authenticated POST requests and returns
+  only squat, bench, and deadlift TM/estimated-1RM values. The token lives in
+  Script Properties and the separate private `lifting-stats-publisher` repo.
 
 There are no simple or installable edit triggers in the current project. Apps
 Script installable triggers are not represented in `appsscript.json`, so run
@@ -31,6 +34,11 @@ Do not test layout-changing macros against the live workbook.
 
 The automatic GitHub deployment creates `.clasp.json` from the protected
 `APPS_SCRIPT_ID` repository secret; it never targets the test project.
+
+After the initial web-app deployment, `PUBLIC_STATS_DEPLOYMENT_ID` keeps the
+endpoint version synchronized with every successful production source deploy.
+The private publisher runs daily, validates the response, and commits the JSON
+to the Pages repository only when values change.
 
 ## Deployment verification
 

@@ -87,6 +87,12 @@ The deploy credential is a base64-encoded copy of the local `~/.clasprc.json`.
 It contains an OAuth refresh token and must only be stored as an encrypted
 GitHub Actions secret. Never print it, commit it, or place it in an artifact.
 
+The production script also exposes a token-protected `doPost` web-app endpoint
+that returns only the current squat, bench, and deadlift training maxes and
+estimated one-rep maxes. A separate private publisher validates that six-value
+snapshot and updates `tjander3.github.io`. Spreadsheet identifiers, workout
+history, and the endpoint token are never included in the response.
+
 ## Useful commands
 
 | Command | Purpose |
@@ -120,6 +126,7 @@ The production project has three externally invoked entrypoints:
 - `FIVE_THREE_ONE_SSL` is called by spreadsheet formulas.
 - `Startnewweek` is the bound spreadsheet macro named **Start new week**.
 - `write_prs` is invoked by an installable daily time trigger.
+- `doPost` serves the minimal authenticated public-stat snapshot.
 
 After linking a new Apps Script project, run `setupTriggers` once in the Apps
 Script editor. It keeps one existing `write_prs` trigger, or replaces duplicates
