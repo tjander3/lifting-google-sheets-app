@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { loadAppsScript } from './loadAppsScript.js';
+import { evaluateAppsScript, loadAppsScript } from './loadAppsScript.js';
 
 let app;
 
@@ -17,6 +17,34 @@ describe('hello_world', () => {
     expect(log.mock.calls[0][0]).toMatch(
       /^Hello world test log: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
     );
+  });
+});
+
+describe('Apps Script entrypoints', () => {
+  it('preserves functions invoked by Sheets, triggers, and the web app', () => {
+    [
+      'hello_world',
+      'Startnewweek',
+      'FIVE_THREE_ONE_SSL',
+      'write_prs',
+      'log_write_prs_status',
+      'setupTriggers',
+      'doPost',
+    ].forEach(entrypoint => {
+      expect(app[entrypoint], entrypoint).toBeTypeOf('function');
+    });
+  });
+});
+
+describe('get_week_number', () => {
+  it('preserves the Sunday-based week numbers used by workout lookups', () => {
+    expect(app.get_week_number(new Date(2026, 0, 4))).toBe(1);
+    expect(app.get_week_number(new Date(2026, 7, 23))).toBe(34);
+  });
+
+  it('supports an explicit Monday offset without modifying Date.prototype', () => {
+    expect(app.get_week_number(new Date(2026, 0, 1), 1)).toBe(1);
+    expect(evaluateAppsScript('typeof Date.prototype.getWeek', app)).toBe('undefined');
   });
 });
 

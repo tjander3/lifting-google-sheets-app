@@ -58,6 +58,16 @@ ignored by Git.
 5. Commit the verified change and push it to GitHub. A successful test run on
    `main` automatically pushes the same source to Apps Script.
 
+The Apps Script source is organized by responsibility:
+
+- `config.js`: automation and public-endpoint configuration
+- `diagnostics.js`: smoke tests, runtime status, and trigger setup
+- `sheets.js`: workbook access, lift locations, and week lookup
+- `lifting.js`: workout parsing, volume, PR calculation, and `write_prs`
+- `fiveThreeOne.js`: the `FIVE_THREE_ONE_SSL` custom function
+- `macros.js`: the recorded `Startnewweek` spreadsheet macro
+- `publicStats.js`: the authenticated public training snapshot endpoint
+
 `npm run apps:push` stops if the local tests fail. A `clasp push` replaces the
 remote project's complete source, so avoid making simultaneous edits in the
 Apps Script web editor. If an emergency web edit is made, commit or stash local
@@ -65,10 +75,10 @@ work and run `npm run apps:pull` before continuing locally.
 
 ## Tests
 
-Vitest loads `src/Code.js` in a small Apps Script-like VM context. The current
-suite covers lift parsing, volume and one-rep-max calculations, rounding, and
-the `FIVE_THREE_ONE_SSL` custom function, including its three-set 40/50/60
-deload. Spreadsheet integration and the
+Vitest loads every JavaScript file under `src/` in a small Apps Script-like VM
+context. The current suite covers lift parsing, volume and one-rep-max
+calculations, week-number lookups, rounding, and the `FIVE_THREE_ONE_SSL` custom
+function, including its three-set 40/50/60 deload. Spreadsheet integration and the
 recorded `Startnewweek` macro still require a test spreadsheet because they
 depend directly on `SpreadsheetApp` and workbook layout.
 

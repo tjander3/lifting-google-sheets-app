@@ -6,6 +6,9 @@
   to the real max table maintained by `write_prs` and bumped its schema to 2.
 - Kept `hello_world` as a timestamped manual logging smoke test while removing
   obsolete debug helpers, noisy logs, stale comments, and a redundant variable.
+- Split the Apps Script monolith into configuration, diagnostics, sheet access,
+  lifting/PR, 5/3/1, macro, and public-stats modules. Replaced the global
+  `Date.prototype.getWeek` mutation with a tested `get_week_number` helper.
 
 ## 2026-08-22
 

@@ -1,10 +1,14 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { createContext, Script } from 'node:vm';
 
-const sources = [
-  readFileSync(new URL('../src/Code.js', import.meta.url), 'utf8'),
-  readFileSync(new URL('../src/macros.js', import.meta.url), 'utf8'),
-];
+const sourceDirectory = new URL('../src/', import.meta.url);
+const sources = readdirSync(sourceDirectory)
+  .filter(filename => filename.endsWith('.js'))
+  .sort()
+  .map(filename => ({
+    filename: `src/${filename}`,
+    contents: readFileSync(new URL(filename, sourceDirectory), 'utf8'),
+  }));
 
 export function loadAppsScript(overrides = {}) {
   const context = createContext({
@@ -22,9 +26,12 @@ export function loadAppsScript(overrides = {}) {
     ...overrides,
   });
 
-  for (const [index, source] of sources.entries()) {
-    const filename = index === 0 ? 'src/Code.js' : 'src/macros.js';
-    new Script(source, { filename }).runInContext(context);
+  for (const source of sources) {
+    new Script(source.contents, { filename: source.filename }).runInContext(context);
   }
   return context;
+}
+
+export function evaluateAppsScript(source, context) {
+  return new Script(source).runInContext(context);
 }
